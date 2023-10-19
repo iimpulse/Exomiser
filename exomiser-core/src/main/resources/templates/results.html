@@ -503,16 +503,44 @@
                           </div>
                           <div class="tab-pane fade" th:id="${'phenomatches-body-' + gene.getGeneIdentifier().getGeneSymbol()}" role="tabpanel" aria-labelledby="phenomatches-tab" tabindex="0">
                             <div class="row">
-                                <div class="col-sm-12">
-                                    <th:block th:each="priorityResult: ${gene.priorityResults}"
-                                              th:utext="${priorityResult.value.HTMLCode}">
+                                <div class="col-sm-12" th:each="priorityResult: ${gene.priorityResults}">
+                                    <th:block th:if="${priorityResult.value.getPriorityType().toString() != 'OMIM_PRIORITY'}" th:utext="${priorityResult.value.HTMLCode}">
                                         <a href="https://www.omim.org/entry/248450">Manitoba oculotrichoanal syndrome</a>
                                     </th:block>
                                 </div>
                             </div>
                           </div>
                           <div class="tab-pane fade" th:id="${'kdiseases-body-' + gene.getGeneIdentifier().getGeneSymbol()}" role="tabpanel" aria-labelledby="kdiseases-tab" tabindex="0">
-                                TO BE PORTED
+                              <div class="col-sm-12" th:each="priorityResult: ${gene.priorityResults}">
+                                  <th:block th:if="${priorityResult.value.getPriorityType().toString() == 'OMIM_PRIORITY'}">
+                                      <table class="table table-sm">
+                                          <thead>
+                                            <tr class="table-primary">
+                                                <td>Identifier</td>
+                                                <td>Disease Name</td>
+                                                <td>Mode of Inheritance</td>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <tr th:each="disease: ${priorityResult.value.getAssociatedDiseases()}">
+                                                <td>
+                                                    <a th:if="${disease.getDiseaseId().contains('OMIM')}"
+                                                       th:href="@{|https://omim.org/entry/${disease.getDiseaseId().split(':')[1]}|}"
+                                                       th:text="${disease.getDiseaseId()}"></a>
+                                                    <a th:if="${disease.getDiseaseId().contains('ORPHA')}"
+                                                       th:href="@{|https://www.orpha.net/consor/cgi-bin/OC_Exp.php?Lng=EN&Expert=${disease.getDiseaseId().split(':')[1]}|}"
+                                                       th:text="${disease.getDiseaseId()}"></a>
+                                                    <a th:if="${disease.getDiseaseId().contains('MONDO')}"
+                                                       th:href="@{|https://monarchinitiative.org/disease/${disease.getDiseaseId()}|}"
+                                                       th:text="${disease.getDiseaseId()}"></a>
+                                                </td>
+                                                <td th:utext="${disease.getDiseaseName()}"></td>
+                                                <td th:utext="${disease.getInheritanceMode().toString()}"></td>
+                                            </tr>
+                                          </tbody>
+                                      </table>
+                                  </th:block>
+                              </div>
                           </div>
                         </div>
                      </div>
