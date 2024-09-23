@@ -27,7 +27,7 @@ import de.charite.compbio.jannovar.reference.TranscriptModel;
 import htsjdk.variant.variantcontext.VariantContext;
 import org.junit.jupiter.api.Test;
 import org.monarchinitiative.exomiser.core.model.*;
-import org.monarchinitiative.svart.Variant;
+import org.monarchinitiative.svart.GenomicVariant;
 import org.monarchinitiative.svart.*;
 import org.monarchinitiative.svart.util.VariantTrimmer;
 
@@ -49,13 +49,13 @@ public class JannovarVariantAnnotatorTest {
             .buildDefaultJannovarData(), ChromosomalRegionIndex.empty());
 
     private List<VariantAnnotation> annotate(VariantAnnotator instance, String contig, int start, String ref, String alt) {
-        Variant variant = variant(contig, start, ref, alt);
+        GenomicVariant variant = variant(contig, start, ref, alt);
         return instance.annotate(variant);
     }
 
-    private Variant variant(String contig, int start, String ref, String alt) {
+    private GenomicVariant variant(String contig, int start, String ref, String alt) {
         VariantTrimmer.VariantPosition variantPosition = VariantTrimmer.leftShiftingTrimmer(VariantTrimmer.retainingCommonBase()).trim(Strand.POSITIVE, start, ref, alt);
-        return Variant.of(GenomeAssembly.HG19.getContigByName(contig), "", Strand.POSITIVE, CoordinateSystem.FULLY_CLOSED, Position.of(variantPosition.start()), variantPosition.ref(), variantPosition.alt());
+        return GenomicVariant.of(GenomeAssembly.HG19.getContigByName(contig), Strand.POSITIVE, CoordinateSystem.ONE_BASED, variantPosition.start(), variantPosition.ref(), variantPosition.alt());
     }
 
     @Test
@@ -81,7 +81,7 @@ public class JannovarVariantAnnotatorTest {
         assertThat(transcriptAnnotation.getGeneSymbol(), equalTo("FGFR2"));
         assertThat(transcriptAnnotation.getAccession(), equalTo("uc021pzz.1"));
         assertThat(transcriptAnnotation.getDistanceFromNearestGene(), equalTo(0));
-        assertThat(transcriptAnnotation.getHgvsGenomic(), equalTo("g.12278533A>C"));
+        assertThat(transcriptAnnotation.getHgvsGenomic(), equalTo("g.123256215T>G"));
         assertThat(transcriptAnnotation.getHgvsCdna(), equalTo("c.1694A>C"));
         assertThat(transcriptAnnotation.getHgvsProtein(), equalTo("p.(Glu565Ala)"));
     }
@@ -104,9 +104,61 @@ public class JannovarVariantAnnotatorTest {
         assertThat(transcriptAnnotation.getGeneSymbol(), equalTo("FGFR2"));
         assertThat(transcriptAnnotation.getAccession(), equalTo("uc021pzz.1"));
         assertThat(transcriptAnnotation.getDistanceFromNearestGene(), equalTo(0));
-        assertThat(transcriptAnnotation.getHgvsGenomic(), equalTo("g.12291429A>C"));
+        assertThat(transcriptAnnotation.getHgvsGenomic(), equalTo("g.123243319T>G"));
         assertThat(transcriptAnnotation.getHgvsCdna(), equalTo("c.2196-2A>C"));
         assertThat(transcriptAnnotation.getHgvsProtein(), equalTo("p.?"));
+    }
+
+    @Test
+    void testAnnotateMitochondrialAlternateCodonStopGainVariant() {
+        TranscriptModel tmMTCYB = new GeneTranscriptModelBuilder("MT-CYB", "HGNC:7427", "ENST00000361789.2", 25, de.charite.compbio.jannovar.reference.Strand.FWD,
+                "ATGACCCCAATACGCAAAACTAACCCCCTAATAAAATTAATTAACCACTCATTCATCGAC" +
+                        "CTCCCCACCCCATCCAACATCTCCGCATGATGAAACTTCGGCTCACTCCTTGGCGCCTGC" +
+                        "CTGATCCTCCAAATCACCACAGGACTATTCCTAGCCATGCACTACTCACCAGACGCCTCA" +
+                        "ACCGCCTTTTCATCAATCGCCCACATCACTCGAGACGTAAATTATGGCTGAATCATCCGC" +
+                        "TACCTTCACGCCAATGGCGCCTCAATATTCTTTATCTGCCTCTTCCTACACATCGGGCGA" +
+                        "GGCCTATATTACGGATCATTTCTCTACTCAGAAACCTGAAACATCGGCATTATCCTCCTG" +
+                        "CTTGCAACTATAGCAACAGCCTTCATAGGCTATGTCCTCCCGTGAGGCCAAATATCATTC" +
+                        "TGAGGGGCCACAGTAATTACAAACTTACTATCCGCCATCCCATACATTGGGACAGACCTA" +
+                        "GTTCAATGAATCTGAGGAGGCTACTCAGTAGACAGTCCCACCCTCACACGATTCTTTACC" +
+                        "TTTCACTTCATCTTGCCCTTCATTATTGCAGCCCTAGCAACACTCCACCTCCTATTCTTG" +
+                        "CACGAAACGGGATCAAACAACCCCCTAGGAATCACCTCCCATTCCGATAAAATCACCTTC" +
+                        "CACCCTTACTACACAATCAAAGACGCCCTCGGCTTACTTCTCTTCCTTCTCTCCTTAATG" +
+                        "ACATTAACACTATTCTCACCAGACCTCCTAGGCGACCCAGACAATTATACCCTAGCCAAC" +
+                        "CCCTTAAACACCCCTCCCCACATCAAGCCCGAATGATATTTCCTATTCGCCTACACAATT" +
+                        "CTCCGATCCGTCCCTAACAAACTAGGAGGCGTCCTTGCCCTATTACTATCCATCCTCATC" +
+                        "CTAGCAATAATCCCCATCCTCCATATATCCAAACAACAAAGCATAATATTTCGCCCACTA" +
+                        "AGCCAATCACTTTATTGACTCCTAGCCGCAGACCTCCTCATTCTAACCTGAATCGGAGGA" +
+                        "CAACCAGTAAGCTACCCTTTTACCATCATTGGACAAGTAGCATCCGTACTATACTTCACA" +
+                        "ACAATCCTAATCCTAATACCAACTATCTCCCTAATTGAAAACAAAATACTCAAATGGGCC" +
+                        "T")
+                .buildTxRegion(14746, 15887) // zero-based coordinates
+                .buildCdsRegion(14746, 15887)
+                .addExon(14746, 15887)
+                .build();
+        JannovarData jannovarData = new JannovarData(TestFactory.getDefaultRefDict(), ImmutableList.of(tmMTCYB));;
+
+        JannovarVariantAnnotator jannovarVariantAnnotator = new JannovarVariantAnnotator(TestFactory.getDefaultGenomeAssembly(), jannovarData, ChromosomalRegionIndex.empty());
+
+        // see https://www.mitomap.org/foswiki/bin/view/MITOMAP/VariantsCoding for know variants
+        // MT-CYB m.15150G>A p.(Trp135*)
+        // MT-CYB m.15722T>A p.(Trp326*)
+        List<VariantAnnotation> annotations = annotate(jannovarVariantAnnotator, "MT", 15150, "G", "A");
+        assertThat(annotations.size(), equalTo(1));
+
+        VariantAnnotation variantAnnotation = annotations.get(0);
+
+        assertThat(variantAnnotation.getGeneId(), equalTo("HGNC:7427"));
+        assertThat(variantAnnotation.getGeneSymbol(), equalTo("MT-CYB"));
+        assertThat(variantAnnotation.getVariantEffect(), equalTo(VariantEffect.STOP_GAINED));
+        assertThat(variantAnnotation.hasTranscriptAnnotations(), is(true));
+        TranscriptAnnotation transcriptAnnotation = variantAnnotation.getTranscriptAnnotations().get(0);
+        assertThat(transcriptAnnotation.getGeneSymbol(), equalTo("MT-CYB"));
+        assertThat(transcriptAnnotation.getAccession(), equalTo("ENST00000361789.2"));
+        assertThat(transcriptAnnotation.getDistanceFromNearestGene(), equalTo(0));
+        assertThat(transcriptAnnotation.getHgvsGenomic(), equalTo("g.15150G>A")); // should be NC_012920.1:m.15150G>A
+        assertThat(transcriptAnnotation.getHgvsCdna(), equalTo("c.404G>A"));
+        assertThat(transcriptAnnotation.getHgvsProtein(), equalTo("p.(Trp135*)")); // p.(Ter135=) using the standard eukaryotic codon table
     }
 
     @Test
@@ -171,7 +223,7 @@ public class JannovarVariantAnnotatorTest {
 
     @Test
     void testUpstreamGeneIntergenicVariantsInRegulatoryRegion() {
-        Variant upstreamVariant = variant("10", 123357973, "T", "G");
+        GenomicVariant upstreamVariant = variant("10", 123357973, "T", "G");
         //Without the regulatory regions in the annotator
         List<VariantAnnotation> upstreamVariantAnnots = instance.annotate(upstreamVariant);
         assertThat(upstreamVariantAnnots.size(), equalTo(1));
@@ -179,7 +231,7 @@ public class JannovarVariantAnnotatorTest {
 
         assertThat(upstreamAnnotations.getVariantEffect(), equalTo(VariantEffect.UPSTREAM_GENE_VARIANT));
 
-        Variant intergenicVariant = variant("10", 123458888, "T", "G");
+        GenomicVariant intergenicVariant = variant("10", 123458888, "T", "G");
         List<VariantAnnotation> intergenicVariantAnnots = annotate(instance, "10", 123458888, "T", "G");
         assertThat(intergenicVariantAnnots.size(), equalTo(1));
         VariantAnnotation intergenicAnnotations = intergenicVariantAnnots.get(0);
@@ -267,7 +319,7 @@ public class JannovarVariantAnnotatorTest {
         String ref = "A";
         String alt = "<INS>";
 
-        Variant variant = Variant.of(chrX, "", Strand.POSITIVE, CoordinateSystem.FULLY_CLOSED, Position.of(pos), Position.of(pos), ref, alt, 100);
+        GenomicVariant variant = GenomicVariant.of(chrX, Strand.POSITIVE, CoordinateSystem.ONE_BASED, pos, pos, ref, alt, 100);
         List<VariantAnnotation> annotations = instance.annotate(variant);
         assertThat(annotations.size(), equalTo(1));
 
@@ -334,7 +386,7 @@ public class JannovarVariantAnnotatorTest {
         VariantContext variantContext = TestVcfReader.forSamples("sample").readVariantContext("10      123352331   .      GGCGCCTGTAGTCCCAGCTACTTGGGAGGCTGAGGCTCGAGAATCGCTTGAACCTAGGAGGGGGAGGTTGCAGTGAGCCGAGATCGTGCCACTGCACTCCAGCTTGGCAACAGAGCAAGACTCCATCTCAAAAAAAAAAAAAAAATTGTGTCTATGTATTATAAGCCATATCCTTTGGGAAGCAGACAAGATATAAATAATAAATAACTGTAATAACACATTCTATACATTAAATCATTTCATCTACTACTAAATTACAATACTTATTTTACAGCACTTTATGAAAGTGTGCTCACCTGAAATTTGCTAAAAGGAGCTCAAAAGAGCTAGGGAGAGATGCAAATCAATACCCAAGGGACAGATTAAGACAGAGGCAGGCATCAGAGCTAAAGTATACAAACTAACATGGAACTATTAGGAAATTTTACTGGTTACATTCTCAGAATGATGGCTCTAGGTACACACTGGCTTTTGGCTCACAGTGTAAGCTAATCACAATACTGAGTTATGCCCATTAAAATCATGACTATCCTGAAATGGAACCCTGGCATTAACCTTTTAAGACCAACCTGAAGGGCACTGCACACTGTGATTTCAGGTGTTCTCAAAACAGGGATTTGCTGATGTTTATTCACTAAAGTCTAGGACTAAAATTCTGTAAGTATGTGACTAAGTTGCAAGGAGTATTCCTTAAACCTAAGTGCAGCCGTACTGCAGAAATGAAGACTTCTCTGCTAAATATCAAGGCTGAGTGCTCTCTTGGCAAAAACTTAGCAACAACTAATACAAAATCTAGAAGTTGTCAAGAATACACATACATTTTCTGTTTCTGTTAATCAAATATCATCCACAACCTGAAAATTCCTTTCATTGCCACACAAACTTAATTTTGCATAGAACTTCTTGGGCATAAAATTATTCTGATCCCATCCTACTAAATATCACATGAATATCCCTTTTATTTCTGTCTATTAAGTATTCAAGTTGCGGACTCTAAATTAGCAATTTGATTTTAAATTCTACTAGCTCCTGGATTACTTCTAATGTTAATGAAGATTAGACAATAGGCTTAAAAAGTAGGACTTTTCTGGGTGGGTTCTGACCAATTCTTTCCCCCTTAATATTCCAGAATGATTAAATGCATTCATTGTTATTAAAGCAGTGGTCTATTGAGTCACATACGGTACCTTGGGGCCATGTGGGAAGTCAAACAGGTAAGTCATAATTTTCTGGAAAAAAAAATTTAACATAAGGTCCATATACTACTTTTGCAAAAGGTATATAACCTAAAGAAATTACAAGCTTTTCACAAAACATGTCTTTTTCAACATAGGACTCACCACATTCTTGTTTCCTCTAAATTTTATGAAATCATGGCAGTGGAAGCCAGAAATTAATGCTTTACCATATACCAAAAAGAAAAAAAGGCTTCTGACATTCTCAGGGAGGATACATACTTCCTCTGGAAGATGTTTTTGAACACACATTTGGAGGAAAGGAGCATATGAGGTAGGGGTATAGAGAAAACTAATGACTCACACAGAAATAACCTATCACCTTGGCTTCGCTACTGCCATCCCTAGACCAACTAAGTCAACAAACCAACGGTTTATGTAAGACTGTTTACTACAAATCACCAGGTGTCTAAATCAAGTTTACATGTACAGCGAATTGGGGGAAGTGGAACTTCTTGCCAGTACTATAAATTTTTAAGTGTCTCAGCAAAAGTAAGATGAAGTTAAGGAGTTAGATCAGTTTTTCCACATGCTTTAATCATGGGAAAAAACTGTTTTTAAGAGGTAGTAAATTTTGGGCTGGGCACAGTGACTCACGCCTGTAATCCCAGCACTTTGGGAGGCCAAGGTGGGTGGATCACGAGGTCAGGAGTTCAAGACCAGCCTGTCCAAGATGTTAAAACCTCGTCTCTACTAAAAATACAAAAAAATTAGCCAGGCGCAGTGGCAGGT        G       .       PASS    .  GT    1/1");
         GenomeAssembly hg19 = GenomeAssembly.HG19;
         VariantContextConverter variantContextConverter = VariantContextConverter.of(hg19.genomicAssembly(), VariantTrimmer.leftShiftingTrimmer(VariantTrimmer.retainingCommonBase()));
-        Variant variant = variantContextConverter.convertToVariant(variantContext, variantContext.getAlternateAllele(0));
+        GenomicVariant variant = variantContextConverter.convertToVariant(variantContext, variantContext.getAlternateAllele(0));
         List<VariantAnnotation> variantAnnotations = instance.annotate(variant);
 
         assertThat(variantAnnotations.size(), equalTo(1));
@@ -346,7 +398,7 @@ public class JannovarVariantAnnotatorTest {
         VariantContext variantContext = TestVcfReader.forSamples("sample").readVariantContext("10      123361399   .      C    CCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGGTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGAGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGACAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGCTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGCTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGCTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGGTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGCCAGGCGGGGTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGCTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGCCAGGCGGGGTGAGGGTCAGAGGAAGGGCCAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGCCAGGCGGGGTGAGGGTCAGAGGAAGGGACAGGCGGGGTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCAGAGGAAGGGACAGGCGGGGTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCAGAGGAAGGGACAGGCGGGGTGAGGGTCAGAGGAAGGGGCAGGCGGGCTGAGGGTCAGAGGAAGGGCCAGGCGGGGTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCACAGGAAGGGACAGGCGGGGTGAGGGTCAGAGGAAGGGCCAGGCGGGCTGAGGGTCA       .       PASS    .  GT    1/1");
         GenomeAssembly hg19 = GenomeAssembly.HG19;
         VariantContextConverter variantContextConverter = VariantContextConverter.of(hg19.genomicAssembly(), VariantTrimmer.leftShiftingTrimmer(VariantTrimmer.retainingCommonBase()));
-        Variant variant = variantContextConverter.convertToVariant(variantContext, variantContext.getAlternateAllele(0));
+        GenomicVariant variant = variantContextConverter.convertToVariant(variantContext, variantContext.getAlternateAllele(0));
         List<VariantAnnotation> variantAnnotations = instance.annotate(variant);
 
         assertThat(variantAnnotations.size(), equalTo(1));

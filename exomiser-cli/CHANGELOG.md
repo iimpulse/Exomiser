@@ -1,5 +1,38 @@
 # The Exomiser Command Line Executable - Changelog
 
+## 14.0.2 2024-09-20
+
+- Fix for issue #571. This is a bug-fix release to prevent erroneous assignment of `PVS1` to recessive-compatible variants in LOF-tolerant genes.
+
+## 14.0.1 2024-09-03
+ 
+- Fix for Issue #565. This is a patch release to prevent a possible ArrayIndexOutOfBoundsException being thrown when outputting the variants TSV file. There are no other changes.
+
+## 14.0.0 2024-02-29
+
+- Minimum Java version is now **Java 17**
+- Update database format **REQUIRES DATABASE VERSION 2402** - these are significantly smaller than the previous versions (~50-60% of previous size)
+- Added new GeneBlacklistFilter [#457](https://github.com/exomiser/Exomiser/issues/457)
+- Add new ClinVar conflicting evidence counts in HTML output [#535](https://github.com/exomiser/Exomiser/issues/535)
+- Added PS1, PM1, PM5 categories to ACMG assignments
+- Altered reporting of InheritanceModeFilter to state that the number shown refers to variants rather than genes.
+- Updated gene constraints to use gnomad v4.0 data.
+- TSV genes, TSV variants and VCF outputs will only write to a single file where the possible modes of inheritances are now shown together rather than split across separate files.
+- Fix for issue [#531](https://github.com/exomiser/Exomiser/issues/531) where the `priorityScoreFilter` and `regulatoryFeatureFilter` pass/fail counts were not displayed in the HTML.
+- Fix for issue [#534](https://github.com/exomiser/Exomiser/issues/534) where variant frequency and/or pathogenicity annotations are missing in certain run configurations.
+- Fix for issue [#541](https://github.com/exomiser/Exomiser/issues/541) where logging to /tmp/spring.log causes clashes in shared user environments.
+- TSV output column `CLINVAR_ALLELE_ID` has been changed to `CLINVAR_VARIANT_ID` to allow easier reference to ClinVar variants.
+
+## 13.3.0 2023-10-17
+
+- Updated Jannovar version to 0.41 to fix incorrect MT codon table usage [#521](https://github.com/exomiser/Exomiser/issues/521)
+- Downgraded PM2 - PM2_Supporting for variants lacking frequency information [#502](https://github.com/exomiser/Exomiser/issues/502).
+- Updated AcmgEvidence to fit a Bayesian points-based system [#514](https://github.com/exomiser/Exomiser/issues/514)
+- Removed ASJ, FIN, OTH ExAC and gnomAD populations from presets and examples [#513](https://github.com/exomiser/Exomiser/issues/513).
+- Fix for regression causing `<INV>` variants to be incorrectly down-ranked
+- Fix for issue [#486](https://github.com/exomiser/Exomiser/issues/486) where VCF output includes whitespace in INFO field.
+- Logs will now display elapsed time correctly if an analysis runs over an hour (!). 
+
 ## 13.2.1 2023-06-30
 
 - Fix for bug where all `<INS>` structural variants were given a maximal variant score of 1.0 regardless of their position on a transcript.

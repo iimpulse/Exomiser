@@ -40,7 +40,7 @@ import org.monarchinitiative.exomiser.core.genome.GenomeAssembly;
 import org.monarchinitiative.exomiser.core.genome.VcfFiles;
 import org.monarchinitiative.exomiser.core.model.*;
 import org.monarchinitiative.svart.Contig;
-import org.monarchinitiative.svart.GenomicAssembly;
+import org.monarchinitiative.svart.assembly.GenomicAssembly;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -220,7 +220,7 @@ public class VcfResultsWriter implements ResultsWriter {
         fields.add(assignment.map(AcmgAssignment::acmgClassification).orElse(AcmgClassification.NOT_AVAILABLE).toString());
         fields.add(assignment.map(acmgAssignment -> toVcfAcmgInfo(acmgAssignment.acmgEvidence())).orElse(""));
         fields.add(assignment.map(acmgAssignment -> acmgAssignment.disease().getDiseaseId()).orElse(""));
-        fields.add('"' + assignment.map(acmgAssignment -> acmgAssignment.disease().getDiseaseName()).orElse("") + '"');
+        fields.add('"' + assignment.map(acmgAssignment -> acmgAssignment.disease().getDiseaseName().replace(" ", "_")).orElse("") + '"');
         return "{"+ String.join("|", fields) + "}";
     }
 

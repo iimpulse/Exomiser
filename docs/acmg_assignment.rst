@@ -7,8 +7,11 @@ ACMG Assignment
 Starting with version 13.1.0, Exomiser performs a partial categorisation of the variants contributing to the gene
 score for a mode of inheritance using the ACMG/AMP `Standards and guidelines for the interpretation of sequence
 variants: a joint consensus recommendation of the American College of Medical Genetics and Genomics and the Association
-for Molecular Pathology <https://doi.org/10.1038/gim.2015.30>`_. The criteria are assigned and combined according to the
-`UK ACGS 2020 guidelines <https://www.acgs.uk.com/media/11631/uk-practice-guidelines-for-variant-classification-v4-01-2020.pdf>`_.
+for Molecular Pathology <https://doi.org/10.1038/gim.2015.30>`_. The criteria are assigned according to the
+`UK ACGS 2020 guidelines <https://www.acgs.uk.com/media/11631/uk-practice-guidelines-for-variant-classification-v4-01-2020.pdf>`_
+and scored according to the
+`ClinGen SVI <https://clinicalgenome.org/working-groups/sequence-variant-interpretation/>`_
+`updated 2020 guidelines <https://clinicalgenome.org/docs/fitting-a-naturally-scaled-point-system-to-the-acmg-amp-variant-classification-guidelines/>`_.
 
 It is important to be aware that these scores are not a substitute for manual assignment by a qualified clinical geneticist
 or clinician - The scores displayed utilise the data found in the Exomiser database and are a subset of the possible
@@ -27,12 +30,23 @@ Computational and Predictive Data
 PVS1
 ----
 Variants must have a predicted loss of function effect, be in a gene with known disease associations and have a gene
-constraint LOF O/E < 0.7635 (gnomAD 2.1.1) to suggest that a gene is LoF intolerant. Variants not predicted to lead to
+constraint LOF O/E < 0.7635 (gnomAD 4.0) to suggest that a gene is LoF intolerant. Variants not predicted to lead to
 NMD (those located in the last exon) will have the modifier downgraded to Strong.
+
+PS1
+---
+Variants with the same amino acid change as previously reported P/LP missense or in-frame indel ClinVar variants will be
+assigned `PS1` with a strength of `Strong` for variants >= 2 stars, `Moderate` for variants with 1 star or `Supporting`
+for those without a ClinVar start rating.
 
 PM4
 ---
 Stop-loss and in-frame insertions or deletions, not previously assigned a `PVS1` criterion are assigned `PM4`.
+
+PM5
+---
+Variants having a novel missense change to an amino acid where a previously reported ClinVar P/LP variant has been seen
+will be assigned `PM5` with a strength of `Moderate` for those with >=2 stars or `Supporting` otherwise.
 
 PP3 / BP4
 ---------
@@ -42,6 +56,16 @@ and ClinGen recommendations for clinical use of PP3/BP4 criteria <https://www.bi
 Note that this suggests the use of modifiers up to Strong in the case of pathogenic or Very Strong in the case of benign predictions.
 Otherwise, an ensemble-based approach will be used for other pathogenicity predictors as per the original 215 guidelines.
 It should be noted we found better performance using the REVEL-based approach when testing against the 100K genomes data.
+
+Functional Data
+===============
+PM1
+---
+Missense and inframe indels are assigned `PM1` if the surrounding region of 25 nucleotides either side of the variant
+contain at least 4 reported P/LP variants in ClinVar and no B/LB variants. If the number of P/LP variants is greater
+than the number of VUS in the region the strength will be assigned `Moderate` but regions containing P/LP <= VUS
+(and no B/BL) will have the strength downgraded to `Supporting`.
+
 
 Segregation Data
 ================
@@ -60,15 +84,25 @@ at least two ancestors of the proband, none of whom are affected and none of who
 
 Population Data
 ===============
+
+For the population data criteria, all frequencies are considered using the populations set by the user in the
+:ref:`frequencysources`, apart from any bottle-necked populations not recommended for frequency filtering from gnomAD
+according to their `filtering allele frequency <https://gnomad.broadinstitute.org/help/faf>`_ document. This excludes
+the Ashkenazi Jewish (ASJ), European Finnish (FIN), Other (OTH), Amish (AMI) and Middle Eastern (MID) populations. In
+addition the LOCAL frequency will also not be used.
+
 BA1
 ---
 Given Exomiser will filter out alleles with an allele frequency of >= 2.0%, this is unlikely to be seen. However, alleles
-with a maximum frequency >= 5.0% in the frequency sources specified will be assigned the `BA1` criterion.
+with a maximum frequency >= 5.0% in the frequency sources specified will be assigned the `BA1` criterion. Variants listed
+as being excluded from this category by the ClinGen SVI working group `BA1 exclusion list <https://www.clinicalgenome.org/site/assets/files/3460/ba1_exception_list_07_30_2018.pdf>`_
+will not be marked as `BA1`, assuming they survived variant filtering.
 
 PM2
 ---
-Alleles not present in the ESP, ExAC and 1000 Genomes data sets (i.e. the allele must be absent from all three) are
-assigned the `PM2` criterion.
+In accordance with the `updated PM2 guidance <https://clinicalgenome.org/site/assets/files/5182/pm2_-_svi_recommendation_-_approved_sept2020.pdf>`_, variants absent from all of the user-defined :ref:`frequencysources`
+will be assigned the `PM2_Supporting` criterion. Additionally, for variants considered under a recessive mode of inheritance they
+can have a frequency of < 0.01% (0.0001) in all non-bottlenecked populations to be assigned `PM2_Supporting`.
 
 Allelic Data
 ============
@@ -145,7 +179,7 @@ conjunction with a disorder, the assigned criteria with any modifiers and the fi
               ],
               "frequencyData": {
                 "rsId": "rs121918506",
-                "score": 1
+                "frequencyScore": 1
               },
               "pathogenicityData": {
                 "clinVarData": {
@@ -153,8 +187,8 @@ conjunction with a disorder, the assigned criteria with any modifiers and the fi
                   "primaryInterpretation": "LIKELY_PATHOGENIC",
                   "reviewStatus": "criteria provided, single submitter"
                 },
-                "score": 0.965,
-                "predictedPathogenicityScores": [
+                "pathogenicitycore": 0.965,
+                "pathogenicityScores": [
                   {
                     "source": "REVEL",
                     "score": 0.965

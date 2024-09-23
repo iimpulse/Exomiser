@@ -43,7 +43,6 @@ import org.monarchinitiative.exomiser.core.model.frequency.Frequency;
 import org.monarchinitiative.exomiser.core.model.frequency.FrequencyData;
 import org.monarchinitiative.exomiser.core.model.frequency.FrequencySource;
 import org.monarchinitiative.exomiser.core.model.pathogenicity.*;
-import org.monarchinitiative.svart.Variant;
 import org.monarchinitiative.svart.*;
 
 import java.util.*;
@@ -113,8 +112,7 @@ public class VariantEvaluationTest {
 
     private VariantEvaluation newInstance() {
         return VariantEvaluation.builder()
-                .with(CHR1, "", Strand.POSITIVE, CoordinateSystem.FULLY_CLOSED, Position.of(POSITION), REF, ALT)
-//                .genomeAssembly(GENOME_ASSEMBLY)
+                .variant(CHR1, Strand.POSITIVE, CoordinateSystem.ONE_BASED, POSITION, REF, ALT)
                 .quality(QUALITY)
                 .geneSymbol(GENE1_GENE_SYMBOL)
                 .geneId(GENE1_GENE_ID)
@@ -123,20 +121,17 @@ public class VariantEvaluationTest {
 
     private VariantEvaluation.Builder testVariantBuilder() {
         return VariantEvaluation.builder()
-                .with(CHR1, "", Strand.POSITIVE, CoordinateSystem.FULLY_CLOSED, Position.of(POSITION), REF, ALT);
-//                .genomeAssembly(GENOME_ASSEMBLY);
+                .variant(CHR1, Strand.POSITIVE, CoordinateSystem.ONE_BASED, POSITION, REF, ALT);
     }
 
     private VariantEvaluation.Builder newBuilder(int chr, int pos, String ref, String alt) {
         return VariantEvaluation.builder()
-                .with(GENOME_ASSEMBLY.getContigById(chr), "", Strand.POSITIVE, CoordinateSystem.FULLY_CLOSED, Position.of(pos), ref, alt);
-//                .genomeAssembly(GenomeAssembly.HG19);
+                .variant(GENOME_ASSEMBLY.getContigById(chr), Strand.POSITIVE, CoordinateSystem.ONE_BASED, pos, ref, alt);
     }
 
     private VariantEvaluation.Builder newBuilder(int chr, int start, int end, String ref, String alt, int changeLength) {
         return VariantEvaluation.builder()
-                .with(GENOME_ASSEMBLY.getContigById(chr), "", Strand.POSITIVE, CoordinateSystem.FULLY_CLOSED, Position.of(start), Position.of(end), ref, alt, changeLength);
-//                .genomeAssembly(GenomeAssembly.HG19);
+                .variant(GENOME_ASSEMBLY.getContigById(chr), Strand.POSITIVE, Coordinates.oneBased(start, end), ref, alt, changeLength);
     }
 
     @Test
@@ -149,7 +144,7 @@ public class VariantEvaluationTest {
         Contig contig = GenomeAssembly.HG38.getContigById(CHROMOSOME);
 
         VariantEvaluation variantEvaluation = VariantEvaluation.builder()
-                .with(contig, "", Strand.POSITIVE, CoordinateSystem.FULLY_CLOSED, Position.of(POSITION), REF, ALT)
+                .variant(contig, Strand.POSITIVE, CoordinateSystem.ONE_BASED, POSITION, REF, ALT)
                 .genomeAssembly(GenomeAssembly.HG38)
                 .build();
         assertThat(variantEvaluation.getGenomeAssembly(), equalTo(GenomeAssembly.HG38));
@@ -184,7 +179,6 @@ public class VariantEvaluationTest {
     @Test
     public void testGetAlt() {
         assertThat(instance.alt(), equalTo(ALT));
-
     }
 
     @Test
@@ -385,7 +379,7 @@ public class VariantEvaluationTest {
         VariantEffect type = VariantEffect.DOWNSTREAM_GENE_VARIANT;
         instance = testVariantBuilder().variantEffect(type).build();
 
-        float expected = VariantEffectPathogenicityScore.getPathogenicityScoreOf(type);
+        float expected = VariantEffectPathogenicityScore.pathogenicityScoreOf(type);
         assertThat(instance.getPathogenicityScore(), equalTo(expected));
     }
 
@@ -395,7 +389,7 @@ public class VariantEvaluationTest {
         PathogenicityData pathData = PathogenicityData.of(CaddScore.of(1f));
         instance = testVariantBuilder().pathogenicityData(pathData).variantEffect(type).build();
 
-        assertThat(instance.getPathogenicityScore(), equalTo(pathData.getScore()));
+        assertThat(instance.getPathogenicityScore(), equalTo(pathData.pathogenicityScore()));
     }
 
     @Test
@@ -403,7 +397,7 @@ public class VariantEvaluationTest {
         VariantEffect type = VariantEffect.MISSENSE_VARIANT;
         instance = testVariantBuilder().variantEffect(type).build();
 
-        float expected = VariantEffectPathogenicityScore.getPathogenicityScoreOf(type);
+        float expected = VariantEffectPathogenicityScore.pathogenicityScoreOf(type);
         assertThat(instance.getPathogenicityScore(), equalTo(expected));
     }
 
@@ -449,34 +443,35 @@ public class VariantEvaluationTest {
         assertThat(instance.getPathogenicityScore(), equalTo(expected));
     }
 
-    @ParameterizedTest
-    @CsvSource({
-        "<INS>, CODING_SEQUENCE_VARIANT, 0.2",
-        "<INS:ME>, CODING_SEQUENCE_VARIANT, 0.2",
-        "<INV>, CODING_SEQUENCE_VARIANT, 0.8", // should be unreachable in production code
-        "<DEL>, CODING_SEQUENCE_VARIANT, 0.8",
-        "<DEL:ME>, CODING_SEQUENCE_VARIANT, 0.8",
-        "<DUP>, CODING_SEQUENCE_VARIANT, 0.8",
-        "<INS>, SPLICE_REGION_VARIANT, 0.9",
-        "<INS:ME>, SPLICE_REGION_VARIANT, 0.9",
-        "<INV>, SPLICE_REGION_VARIANT, 1.0", // should be unreachable in production code
-        "<DEL>, SPLICE_REGION_VARIANT, 1.0",
-        "<DEL:ME>, SPLICE_REGION_VARIANT, 1.0",
-        "<DUP>, SPLICE_REGION_VARIANT, 1.0",
-    })
-    void testSymbolicInsertionScores(String alt, VariantEffect variantEffect, float expected) {
-        VariantEvaluation sv = newBuilder(2, 1, 1, "C", alt, alt.startsWith("<DEL") ? -12345 : 12345)
-                .variantEffect(variantEffect)
-                .build();
-        assertThat(sv.getPathogenicityScore(), equalTo(expected));
-    }
-
     @Test
     public void testGetFailedFilterTypes() {
         Set<FilterType> expectedFilters = EnumSet.of(FAIL_FREQUENCY_RESULT.getFilterType());
 
         instance.addFilterResult(FAIL_FREQUENCY_RESULT);
         assertThat(instance.getFailedFilterTypes(), equalTo(expectedFilters));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "<INS>, CODING_SEQUENCE_VARIANT, 0.2",
+            "<INS:ME>, CODING_SEQUENCE_VARIANT, 0.2",
+            "<INV>, CODING_SEQUENCE_VARIANT, 0.8", // should be unreachable in production code
+            "<INV>, CODING_TRANSCRIPT_VARIANT, 0.6",
+            "<DEL>, CODING_SEQUENCE_VARIANT, 0.8",
+            "<DEL:ME>, CODING_SEQUENCE_VARIANT, 0.8",
+            "<DUP>, CODING_SEQUENCE_VARIANT, 0.8",
+            "<INS>, SPLICE_REGION_VARIANT, 0.9",
+            "<INS:ME>, SPLICE_REGION_VARIANT, 0.9",
+            "<INV>, SPLICE_REGION_VARIANT, 1.0", // should be unreachable in production code
+            "<DEL>, SPLICE_REGION_VARIANT, 1.0",
+            "<DEL:ME>, SPLICE_REGION_VARIANT, 1.0",
+            "<DUP>, SPLICE_REGION_VARIANT, 1.0",
+    })
+    void testSymbolicInsertionScores(String alt, VariantEffect variantEffect, float expected) {
+        VariantEvaluation sv = newBuilder(2, 1, 1, "C", alt, alt.startsWith("<DEL") ? -12345 : 12345)
+                .variantEffect(variantEffect)
+                .build();
+        assertThat(sv.getPathogenicityScore(), equalTo(expected));
     }
 
     @Test
@@ -657,6 +652,7 @@ public class VariantEvaluationTest {
         instance.addFilterResult(FAIL_FREQUENCY_RESULT);
 
         assertThat(instance.passedFilter(passedFilterType), is(true));
+        assertThat(instance.failedFilter(passedFilterType), is(false));
     }
 
     @Test
@@ -666,6 +662,14 @@ public class VariantEvaluationTest {
         instance.addFilterResult(FAIL_FREQUENCY_RESULT);
 
         assertThat(instance.passedFilter(filterType), is(false));
+        assertThat(instance.failedFilter(filterType), is(true));
+    }
+
+    @Test
+    public void testNeitherPassesNorFailsFilterWhenFilterWasNotRun() {
+        FilterType filterType = FAIL_FREQUENCY_RESULT.getFilterType();
+        assertThat(instance.passedFilter(filterType), is(false));
+        assertThat(instance.failedFilter(filterType), is(false));
     }
 
     @Test
@@ -804,7 +808,7 @@ public class VariantEvaluationTest {
 //        variants.forEach(variant -> System.out.printf("chr: %2d pos: %2d ref: %-2s alt: %-2s%n", variant.getContigId(), variant
 //                .getStart(), variant.getRef(), variant.getAlt()));
 
-        variants.sort(Variant.naturalOrder());
+        variants.sort(GenomicVariant.naturalOrder());
 
         List<VariantEvaluation> expected = Arrays.asList(zero, one, two, three, four);
 

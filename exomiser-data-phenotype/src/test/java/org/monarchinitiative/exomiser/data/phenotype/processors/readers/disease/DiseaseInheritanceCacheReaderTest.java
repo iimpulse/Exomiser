@@ -45,7 +45,7 @@ public class DiseaseInheritanceCacheReaderTest {
     private final Map<String, InheritanceMode> result;
 
     public DiseaseInheritanceCacheReaderTest() {
-        Resource testResource = Resource.of("src/test/resources/data/phenotype_annotation_test.tab");
+        Resource testResource = Resource.of("src/test/resources/data/phenotype_test.hpoa");
         DiseaseInheritanceCacheReader instance = new DiseaseInheritanceCacheReader(testResource);
         result = instance.read();
     }
@@ -63,7 +63,18 @@ public class DiseaseInheritanceCacheReaderTest {
      */
     @Test
     public void testGetInheritanceCodeBoth() {
-        assertThat(result.get("OMIM:100300"), equalTo(InheritanceMode.AUTOSOMAL_DOMINANT_AND_RECESSIVE));
+        assertThat(result.get("OMIM:614669"), equalTo(InheritanceMode.AUTOSOMAL_DOMINANT_AND_RECESSIVE));
+    }
+
+    @Test
+    void testsXlinkedDominant() {
+        assertThat(result.get("OMIM:301050"), equalTo(InheritanceMode.X_DOMINANT));
+    }
+
+    @Test
+    void testXlinked() {
+        // OMIM:300958 is XR & XD, so we're calling it X
+        assertThat(result.get("OMIM:300958"), equalTo(InheritanceMode.X_LINKED));
     }
 
     /**
@@ -105,8 +116,6 @@ public class DiseaseInheritanceCacheReaderTest {
 
     @Test
     void testDuplicatedNumericalIdentifier() {
-        assertThat(result.get("OMIM:100050"), equalTo(InheritanceMode.X_LINKED));
-        assertThat(result.get("ORPHA:100050"), is(nullValue()));
         assertThat(result.get("OMIM:230800"), equalTo(InheritanceMode.AUTOSOMAL_RECESSIVE));
         assertThat(result.get("ORPHA:230800"), is(nullValue()));
     }
