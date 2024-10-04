@@ -187,7 +187,8 @@
 
         <!-- Results -->
         <div class="tab-pane fade show active" id="results" role="tabpanel">
-        <div class="accordion accordion-flush" id="accordionResults">
+            <input type="text" id="filterInput" class="form-control mb-3" placeholder="Filter By Gene Name..">
+            <div class="accordion accordion-flush" id="accordionResults">
             <div class="accordion-item mb-1 mt-1" th:each="gene, iterStat: ${genes}">
                 <div class="accordion-header">
                     <div th:id="${gene.getGeneIdentifier().getGeneSymbol()}" class="accordion-button collapsed align-items-center" data-bs-toggle="collapse" th:attr="data-bs-target='#' + ${gene.getGeneIdentifier().getGeneSymbol()} + 'Body'" role="button" aria-expanded="false" >
@@ -464,28 +465,6 @@
                                                     </span>
                                         </th:block>
                                     </div>
-                                    <!--                    <div class="col-sm-12">-->
-                                    <!--                        <b>Exomiser ACMG: </b>-->
-                                    <!--                        <th:bloc  th:with="moi =${geneScore.getModeOfInheritance()} , acmgClassification = ${variantEvaluation.acmgAssignmentForMoi(${moi})}"-->
-                                    <!--                                  th:switch="${acmgClassification.toString()}">-->
-                                    <!--                                    <span th:case="'BENIGN'" class="label label-success"-->
-                                    <!--                                          th:text="${acmgClassification}">BENIGN</span>-->
-                                    <!--                            <span th:case="'LIKELY_BENIGN'" class="label label-info"-->
-                                    <!--                                  th:text="${acmgClassification}">LIKELY_BENIGN</span>-->
-                                    <!--                            <span th:case="'LIKELY_PATHOGENIC'" class="label label-warning"-->
-                                    <!--                                  th:text="${acmgClassification}">LIKELY_PATHOGENIC</span>-->
-                                    <!--                            <span th:case="'PATHOGENIC'" class="label label-danger"-->
-                                    <!--                                  th:text="${acmgClassification}">PATHOGENIC</span>-->
-                                    <!--                            <span th:case="'UNCERTAIN_SIGNIFICANCE'" class="label label-default"-->
-                                    <!--                                  th:text="${acmgClassification}">UNCERTAIN_SIGNIFICANCE</span>-->
-                                    <!--                            <span th:case="*" class="label label-default"-->
-                                    <!--                                  th:text="${acmgClassification}">NOT_AVAILABLE</span>-->
-                                    <!--                            <b-->
-                                    <!--                                    th:text="${acmgClassification.acmgCriteria()}">-->
-                                    <!--                                [PVS1, BP2]-->
-                                    <!--                            </b>-->
-                                    <!--                        </th:bloc>-->
-                                    <!--                    </div>-->
                                     <div class="col-sm-12" th:if="${variantEvaluation.pathogenicityData.hasClinVarData()}">
                                         <b>ClinVar: </b>
                                         <th:block th:with="clinVarData = ${variantEvaluation.pathogenicityData.clinVarData()}"
@@ -743,6 +722,24 @@
                 })
             })
         })
+    </script>
+    <!--Filter Input-->
+    <script type="text/javascript" th:inline="javascript">
+        debugger;
+        document.getElementById('filterInput').addEventListener('input', function() {
+            let filter = this.value.toUpperCase();
+            let items = document.querySelectorAll('.accordion-item');
+
+            items.forEach(item => {
+                const btn = item.querySelector(".accordion-button")
+                let id = btn.id;
+                if (id.includes(filter)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
     </script>
 
 </body>
