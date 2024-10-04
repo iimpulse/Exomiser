@@ -88,6 +88,48 @@
             color: lightslategray;
             text-transform: uppercase;
         }
+
+        .report-wrapper {
+            display: flex;
+        }
+
+        .report-title-wrapper {
+            flex: 0 0 75%;
+        }
+
+        .report-percentloss {
+            flex: 1;
+            align-content: center;
+            text-align: right;
+            color: palevioletred;
+            font-size: 1.2rem;
+        }
+
+        .report-description {
+            margin: 0;
+            font-size: 1rem;
+            font-style: italic;
+        }
+
+        .report-title {
+            color: dimgray;
+        }
+
+        .vstack {
+            margin: 1rem 0 0 0;
+        }
+
+        .progress-bar {
+            --bs-progress-bar-bg: #70dbd7 !important;
+        }
+
+        .summary-report {
+            margin: 0;
+        }
+
+        .summary-report-number {
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
@@ -121,29 +163,25 @@
         <!-- Filtering -->
         <div class="tab-pane fade" id="filtering" role="tabpanel">
             <div class="">
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th>Filter</th>
-                        <th>Report</th>
-                        <th>Passed filter</th>
-                        <th>Failed filter</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="report : ${filterReports}">
-                        <td><b th:text="${report.filterType.shortName}">Frequency</b></td>
-                        <td>
-                            <ul th:each="message : ${report.messages}"
-                                th:if="${not #lists.isEmpty(report.messages)}"
-                                th:text="${message}">Allele frequency &lt; 1.00 %
-                            </ul>
-                        </td>
-                        <td th:text="${report.passed}">16916</td>
-                        <td th:text="${report.failed}">20793</td>
-                    </tr>
-                    </tbody>
-                </table>
+                <p class="summary-report text-lg-end">Final:&nbsp;<strong class="summary-report-number" th:text="${filterReports.get(filterReports.size() - 1).passed}"></strong></p>
+                <div class="progress" style="height: 25px" role="progressbar" aria-label="Percent Filtered" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar text-light fw-bold" th:styleappend="'width: ' + ${filterReports.get(filterReports.size() - 1).getPercentageFilteredFromBeginning(filterReports.get(0).getTotalEvaluationCount())} + '%'"
+                         th:text="${#numbers.formatDecimal(filterReports.get(filterReports.size() - 1).getPercentageFilteredFromBeginning(filterReports.get(0).getTotalEvaluationCount()), 1, 0)} + '% Variants Filtered'">
+                    </div>
+                </div>
+                <div class="vstack gap-3">
+                    <div class="report-wrapper p-2" th:each="report : ${filterReports}">
+                            <div class="report-title-wrapper">
+                                <h5 class="report-title" th:text="${report.filterType.shortName}">Frequency</h5>
+                                <p class="report-description" th:each="message : ${report.messages}"
+                                   th:if="${not #lists.isEmpty(report.messages)}"
+                                   th:text="${message}">
+                                    Allele frequency &lt; 1.00
+                                </p>
+                            </div>
+                            <div class="report-percentloss" th:text="${#numbers.formatDecimal(report.getPercentageFilteredFromReport(filterReports.get(0).getTotalEvaluationCount()), 1, 0)} + '%'"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -305,7 +343,7 @@
                                                 </div>
                                                 <div class="col-sm-12" th:if="${variantEvaluation.pathogenicityData.hasClinVarData()}">
                                                     <b>ClinVar: </b>
-                                                    <th:block th:with="clinVarData = ${variantEvaluation.pathogenicityData.getClinVarData()}"
+                                                    <th:block th:with="clinVarData = ${variantEvaluation.pathogenicityData.clinVarData()}"
                                                               th:switch="${clinVarData.getPrimaryInterpretation().toString()}">
                                                     <span th:case="'BENIGN'" class="label label-success"
                                                           th:text="${clinVarData.getPrimaryInterpretation()}">BENIGN</span>
@@ -321,10 +359,14 @@
                                                               th:text="${clinVarData.getPrimaryInterpretation()}">PATHOGENIC</span>
                                                         <span th:case="*" class="label label-default"
                                                               th:text="${clinVarData.getPrimaryInterpretation()}">UNCERTAIN_SIGNIFICANCE</span>
-                                                        <a th:href="@{https://www.ncbi.nlm.nih.gov/clinvar/(term=${clinVarData.alleleId} + '[alleleid]')}"
+                                                        <a th:href="@{|https://www.ncbi.nlm.nih.gov/clinvar/variation/${clinVarData.variationId}|}"
                                                            th:text="'(' + ${clinVarData.getReviewStatus()} + ')'">
                                                             (criteria_provided,_single_submitter)
                                                         </a>
+                                                        <span th:with="conflictingInterpretationCounts = ${clinVarData.conflictingInterpretationCounts}"
+                                                              th:unless="${#maps.isEmpty(clinVarData.conflictingInterpretationCounts)}"
+                                                              th:text="'(' + ${conflictingInterpretationsFormatter.format(conflictingInterpretationCounts)} + ')'">(P:3, LP:2, VUS:1)
+                                                        </span>
                                                     </th:block>
                                                 </div>
                                                 <div class="col-sm-6">
@@ -360,10 +402,10 @@
                                                         <dd th:each="mostPathogenicScore: ${pathogenicityData.mostPathogenicScore}"
                                                             th:text="${#strings.prepend(mostPathogenicScore.score, 'Best Score: ')}">1.00
                                                         </dd>
-                                                        <dd th:if="${#lists.isEmpty(pathogenicityData.predictedPathogenicityScores)}">No
+                                                        <dd th:if="${#lists.isEmpty(pathogenicityData.pathogenicityScores)}">No
                                                             pathogenicity data
                                                         </dd>
-                                                        <dd th:each="pathScore: ${pathogenicityData.predictedPathogenicityScores}"
+                                                        <dd th:each="pathScore: ${pathogenicityData.pathogenicityScores}"
                                                             th:text="${pathScore}">Mutation Taster: 0.999 (P)
                                                         </dd>
                                                     </dl>
@@ -372,8 +414,8 @@
                                                     <!--<b>Frequency Score: 0.95</b>-->
                                                     <dl th:each="frequencyData: ${variantEvaluation.frequencyData}">
                                                         <dt>Frequency Data:</dt>
-                                                        <dd th:if="${#lists.isEmpty(frequencyData.knownFrequencies)}">No frequency data</dd>
-                                                        <dd th:each="freq: ${frequencyData.knownFrequencies}"
+                                                        <dd th:if="${#lists.isEmpty(frequencyData.frequencies)}">No frequency data</dd>
+                                                        <dd th:each="freq: ${frequencyData.frequencies}"
                                                             th:text="${freq.source.source} + ': ' + ${#numbers.formatDecimal(freq.frequency,1,4)} + '%'">
                                                             1000Genomes: 0.02%
                                                         </dd>
@@ -446,7 +488,7 @@
                                     <!--                    </div>-->
                                     <div class="col-sm-12" th:if="${variantEvaluation.pathogenicityData.hasClinVarData()}">
                                         <b>ClinVar: </b>
-                                        <th:block th:with="clinVarData = ${variantEvaluation.pathogenicityData.getClinVarData()}"
+                                        <th:block th:with="clinVarData = ${variantEvaluation.pathogenicityData.clinVarData()}"
                                                   th:switch="${clinVarData.getPrimaryInterpretation().toString()}">
                                         <span th:case="'BENIGN'" class="label label-success"
                                               th:text="${clinVarData.getPrimaryInterpretation()}">BENIGN</span>
@@ -462,10 +504,13 @@
                                                   th:text="${clinVarData.getPrimaryInterpretation()}">PATHOGENIC</span>
                                             <span th:case="*" class="label label-default"
                                                   th:text="${clinVarData.getPrimaryInterpretation()}">UNCERTAIN_SIGNIFICANCE</span>
-                                            <a th:href="@{https://www.ncbi.nlm.nih.gov/clinvar/(term=${clinVarData.alleleId} + '[alleleid]')}"
+                                            <a th:href="@{|https://www.ncbi.nlm.nih.gov/clinvar/variation/${clinVarData.variationId}|}"
                                                th:text="'(' + ${clinVarData.getReviewStatus()} + ')'">
-                                                (criteria_provided,_single_submitter)
                                             </a>
+                                            <span th:with="conflictingInterpretationCounts = ${clinVarData.conflictingInterpretationCounts}"
+                                                  th:unless="${#maps.isEmpty(clinVarData.conflictingInterpretationCounts)}"
+                                                  th:text="'(' + ${conflictingInterpretationsFormatter.format(conflictingInterpretationCounts)} + ')'">(P:3, LP:2, VUS:1)
+                                            </span>
                                         </th:block>
                                     </div>
                                     <div class="col-sm-6">
@@ -498,10 +543,10 @@
                                             <dd th:each="mostPathogenicScore: ${pathogenicityData.mostPathogenicScore}"
                                                 th:text="${#strings.prepend(mostPathogenicScore.score, 'Best Score: ')}">1.00
                                             </dd>
-                                            <dd th:if="${#lists.isEmpty(pathogenicityData.predictedPathogenicityScores)}">No
+                                            <dd th:if="${#lists.isEmpty(pathogenicityData.pathogenicityScores)}">No
                                                 pathogenicity data
                                             </dd>
-                                            <dd th:each="pathScore: ${pathogenicityData.predictedPathogenicityScores}"
+                                            <dd th:each="pathScore: ${pathogenicityData.pathogenicityScores}"
                                                 th:text="${pathScore}">Mutation Taster: 0.999 (P)
                                             </dd>
                                         </dl>
@@ -510,8 +555,8 @@
                                         <!--<b>Frequency Score: 0.95</b>-->
                                         <dl th:each="frequencyData: ${variantEvaluation.frequencyData}">
                                             <dt>Frequency Data:</dt>
-                                            <dd th:if="${#lists.isEmpty(frequencyData.knownFrequencies)}">No frequency data</dd>
-                                            <dd th:each="freq: ${frequencyData.knownFrequencies}"
+                                            <dd th:if="${#lists.isEmpty(frequencyData.frequencies)}">No frequency data</dd>
+                                            <dd th:each="freq: ${frequencyData.frequencies}"
                                                 th:text="${freq.source.source} + ': ' + ${#numbers.formatDecimal(freq.frequency,1,4)} + '%'">
                                                 1000Genomes: 0.02%
                                             </dd>
@@ -689,7 +734,6 @@
         const accordionItems = document.querySelectorAll('.accordion-collapse')
         const acc = document.getElementById('accordionResults')
         accordionItems.forEach((el)=> {
-            console.log("queing event listeners")
             el.addEventListener('shown.bs.collapse', (e) => {
                 var scrollOffset = acc.scrollTop + el.parentNode.offsetTop
                 window.scroll({

@@ -145,4 +145,9 @@ public class FilterReportTest {
         assertThat(instance.toString(), equalTo(expResult));
     }
 
+    @Test
+    public void testPercentageFailed(){
+        assertThat(instance.getPercentageFilteredFromBeginning(345), equalTo(((345 - 12) / 345) * 100));
+    }
+
 }
