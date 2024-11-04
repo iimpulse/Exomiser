@@ -130,6 +130,69 @@
         .summary-report-number {
             font-size: 1.2rem;
         }
+
+        .variant-eval-box {
+            background: #f8f9fa;
+            padding: .5rem;
+            border-right: solid 1px lightgray;
+            border-bottom: solid 1px lightgray;
+            border-left: solid 1px lightgray;
+            min-height: 115px;
+        }
+
+        .variant-eval-body {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .variant-eval-evidence {
+            font-size: .8rem;
+            margin: .5rem 0 0 0;
+        }
+
+        .variant-eval-btn {
+            margin: .5rem auto 0 auto;
+        }
+
+        .variant-eval-btn .btn {
+            font-size: .8rem;
+        }
+
+        .border-top-danger {
+            border-top: solid red 5px;
+        }
+
+        .border-top-default, .border-top-info {
+            border-top: solid #d0e2ff 5px;
+        }
+
+        .border-top-default, .border-top-blank {
+            border-top: solid #8c8c8c 5px;
+        }
+
+        .border-top-warning {
+            border-top: solid #ffc107 5px;
+        }
+
+        .border-top-success {
+            border-top: solid #28a745 5px;
+        }
+
+        .text-bg-info {
+            background: #d0e2ff !important;
+        }
+
+        .transcript-list-sm {
+            font-size: .8rem;
+            display: none;
+            overflow:hidden;
+            white-space: nowrap;
+            overflow: clip;
+        }
+
+        .text-sm {
+            font-size: .8rem;
+        }
     </style>
 </head>
 <body>
@@ -261,13 +324,12 @@
                                 <div class="genescores-panel genescores-disease">
                                     <div class="row">
                                         <div class="disease-rank-list col-sm-12 col-md-5">
+                                            <h5 class="genescores-section-title"><i>Disease Rank List</i></h5>
                                             <b th:if="${#lists.isEmpty(geneScore.getCompatibleDiseaseMatches())}">
-                                                <h6 class="genescores-section-title">Disease Rank List</h6>
                                                 No phenotype matches to diseases with this MOI.
                                             </b>
                                             <div th:unless="${#lists.isEmpty(geneScore.getCompatibleDiseaseMatches())}">
-                                                <h6 class="genescores-section-title">Disease Rank List</h6>
-                                                    <div class="disease-rank-wrapper">
+                                                    <div th:classappend="${#arrays.length(geneScore.getCompatibleDiseaseMatches()) > 3} ? 'disease-rank-wrapper' : ''">
                                                         <div class="disease-ranks">
                                                             <p th:each="diseaseModel: ${geneScore.getCompatibleDiseaseMatches()}">
                                                                 <span th:text="${#numbers.formatDecimal(diseaseModel.getScore(), 1, 3)} ">
@@ -286,13 +348,13 @@
                                             </div>
                                         </div>
                                         <div class="genescores-variant col-sm-12 col-md-7">
-                                            <h6 class="genescores-section-title">Variant Evaluation</h6>
+                                            <h5 class="genescores-section-title"><i>Variant Evaluation</i></h5>
                                             <div class="row"
                                                  th:each="acmgAssignment: ${geneScore.getAcmgAssignments()}"
                                                  th:with="variantEvaluation = ${acmgAssignment.variantEvaluation()}">
                                                 <div class="col-sm-12">
-                                                <span class="label label-danger"
-                                                      th:text="${variantEvaluation.variantEffect}">MISSENSE</span>
+                                                    <span class="label label-danger"
+                                                          th:text="${variantEvaluation.variantEffect}">MISSENSE</span>
                                                     <b th:text=" ${variantEvaluation.variantType}"> SNV</b>
                                                     <b th:text=" |${variantEvaluation.toGnomad} [${variantEvaluation.genotypeString}]|">chr10:g.123256215T>G [0/1]</b>
                                                     <b th:if="${variantEvaluation.isSymbolic()}"  th:text=" |${variantEvaluation.changeLengthString}|"> 10 Mb</b>
@@ -320,107 +382,145 @@
                                                     </span>
                                                     </th:block>
                                                 </div>
-                                                <div class="col-sm-12">
-                                                    <b>Exomiser ACMG: </b>
-                                                    <th:block th:with="acmgClassification = ${acmgAssignment.acmgClassification()}"
-                                                              th:switch="${acmgClassification.toString()}">
-                                                    <span th:case="'BENIGN'" class="label label-success"
-                                                          th:text="${acmgClassification}">BENIGN</span>
-                                                        <span th:case="'LIKELY_BENIGN'" class="label label-info"
-                                                              th:text="${acmgClassification}">LIKELY_BENIGN</span>
-                                                        <span th:case="'LIKELY_PATHOGENIC'" class="label label-warning"
-                                                              th:text="${acmgClassification}">LIKELY_PATHOGENIC</span>
-                                                        <span th:case="'PATHOGENIC'" class="label label-danger"
-                                                              th:text="${acmgClassification}">PATHOGENIC</span>
-                                                        <span th:case="'UNCERTAIN_SIGNIFICANCE'" class="label label-default"
-                                                              th:text="${acmgClassification}">UNCERTAIN_SIGNIFICANCE</span>
-                                                        <span th:case="*" class="label label-default"
-                                                              th:text="${acmgClassification}">NOT_AVAILABLE</span>
-                                                        <b
-                                                                th:text="${acmgAssignment.acmgEvidence()}">
-                                                            [PVS1, BP2]
-                                                        </b>
-                                                    </th:block>
+                                                <div class="row">
+                                                    <div class="col-sm-12 col-md-5 mt-2">
+                                                        <div class="variant-eval-box" th:with="acmgClassification = ${acmgAssignment.acmgClassification()}" th:classappend="${acmgClassification.toString() == 'BENIGN' ? 'border-top-success' : ''} + ${acmgClassification.toString() == 'LIKELY_BENIGN' ? 'border-top-info' : ''} + ${acmgClassification.toString() == 'LIKELY_PATHOGENIC' ? 'border-top-warning' : ''} + ${acmgClassification.toString() == 'PATHOGENIC' ? 'border-top-danger' : ''} + ${acmgClassification.toString() == 'UNCERTAIN_SIGNIFICANCE' ? 'border-top-info' : ''} + ${acmgClassification.toString() == 'NOT_AVAILABLE' ? 'border-top-info' : ''}">
+                                                            <div class="variant-eval-body">
+                                                                Exomiser ACMG
+                                                                <br>
+                                                                <th:block th:with="acmgClassification = ${acmgAssignment.acmgClassification()}"
+                                                                          th:switch="${acmgClassification.toString()}">
+                                                <span th:case="'BENIGN'" class="badge rounded-pill text-bg-success"
+                                                      th:text="${acmgClassification}">BENIGN</span>
+                                                                    <div th:case="'LIKELY_BENIGN'" class="badge rounded-pill text-bg-info"
+                                                                         th:text="${acmgClassification}">LIKELY_BENIGN</div>
+                                                                    <div th:case="'LIKELY_PATHOGENIC'" class="badge rounded-pill text-bg-warning"
+                                                                         th:text="${acmgClassification}">LIKELY_PATHOGENIC</div>
+                                                                    <div th:case="'PATHOGENIC'" class="badge rounded-pill text-bg-danger"
+                                                                         th:text="${acmgClassification}">PATHOGENIC</div>
+                                                                    <div th:case="'UNCERTAIN_SIGNIFICANCE'" class="badge rounded-pill text-bg-info"
+                                                                         th:text="${acmgClassification}">UNCERTAIN_SIGNIFICANCE</div>
+                                                                    <div th:case="*" class="badge rounded-pill text-bg-info"
+                                                                         th:text="${acmgClassification}">NOT_AVAILABLE</div>
+                                                                </th:block>
+                                                                <p class="variant-eval-evidence" th:if="${!acmgAssignment.acmgEvidence().isEmpty()}" th:text="${acmgAssignment.acmgEvidence()}">
+                                                                    PVS1, BP2
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-12 col-md-5 mt-2">
+                                                        <div class="variant-eval-box " th:if="${variantEvaluation.pathogenicityData.hasClinVarData()}" th:with="acmgClassification = ${acmgAssignment.acmgClassification()}" th:classappend="${acmgClassification.toString() == 'BENIGN' ? 'border-top-success' : ''} + ${acmgClassification.toString() == 'LIKELY_BENIGN' ? 'border-top-info' : ''} + ${acmgClassification.toString() == 'LIKELY_PATHOGENIC' ? 'border-top-warning' : ''} + ${acmgClassification.toString() == 'PATHOGENIC' ? 'border-top-danger' : ''} + ${acmgClassification.toString() == 'UNCERTAIN_SIGNIFICANCE' ? 'border-top-info' : ''} + ${acmgClassification.toString() == 'NOT_AVAILABLE' or variantEvaluation.pathogenicityData.clinVarData.getPrimaryInterpretation().toString() == 'NOT_PROVIDED' ? 'border-top-blank' : ''}">
+                                                            <div class="variant-eval-body">
+                                                                ClinVar
+                                                                <br>
+                                                                <th:block th:with="clinVarData = ${variantEvaluation.pathogenicityData.clinVarData()}"
+                                                                          th:switch="${clinVarData.getPrimaryInterpretation().toString()}">
+                                                                    <div th:case="'BENIGN'" class="badge rounded-pill text-bg-success"
+                                                                         th:text="${clinVarData.getPrimaryInterpretation()}">BENIGN</div>
+                                                                    <div th:case="'BENIGN_OR_LIKELY_BENIGN'" class="badge rounded-pill text-bg-success"
+                                                                         th:text="${clinVarData.getPrimaryInterpretation()}">BENIGN_OR_LIKELY_BENIGN</div>
+                                                                    <div th:case="'LIKELY_BENIGN'" class="badge rounded-pill text-bg-info"
+                                                                         th:text="${clinVarData.getPrimaryInterpretation()}">LIKELY_BENIGN</div>
+                                                                    <div th:case="'LIKELY_PATHOGENIC'" class="badge rounded-pill text-bg-warning"
+                                                                         th:text="${clinVarData.getPrimaryInterpretation()}">LIKELY_PATHOGENIC</div>
+                                                                    <div th:case="'PATHOGENIC_OR_LIKELY_PATHOGENIC'" class="badge rounded-pill text-bg-danger"
+                                                                         th:text="${clinVarData.getPrimaryInterpretation()}">PATHOGENIC_OR_LIKELY_PATHOGENIC</div>
+                                                                    <div th:case="'PATHOGENIC'" class="badge rounded-pill text-bg-danger"
+                                                                         th:text="${clinVarData.getPrimaryInterpretation()}">PATHOGENIC</div>
+                                                                    <div th:case="*" class="badge rounded-pill text-bg-info"
+                                                                         th:text="${clinVarData.getPrimaryInterpretation()}">UNCERTAIN_SIGNIFICANCE</div>
+                                                                    <div class="variant-eval-btn" th:if="${clinVarData.getPrimaryInterpretation().toString() != 'NOT_PROVIDED'}">
+                                                                        <a class="btn btn-secondary btn-sm" th:href="@{|https://www.ncbi.nlm.nih.gov/clinvar/variation/${clinVarData.variationId}|}" target="_blank">
+                                                                            View Evidence
+                                                                        </a>
+                                                                    </div>
+                                                                    <div th:with="conflictingInterpretationCounts = ${clinVarData.conflictingInterpretationCounts}"
+                                                                         th:unless="${#maps.isEmpty(clinVarData.conflictingInterpretationCounts)}"
+                                                                         th:text="'(' + ${conflictingInterpretationsFormatter.format(conflictingInterpretationCounts)} + ')'">(P:3, LP:2, VUS:1)
+                                                                    </div>
+                                                                </th:block>
+                                                            </div>
+                                                        </div>
+                                                        <div class="variant-eval-box border-top-blank" th:if="${not variantEvaluation.pathogenicityData.hasClinVarData()}">
+                                                            <div class="variant-eval-body">
+                                                                ClinVar
+                                                                <br>
+                                                                <div>
+                                                                    No Evidence
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div class="col-sm-12" th:if="${variantEvaluation.pathogenicityData.hasClinVarData()}">
-                                                    <b>ClinVar: </b>
-                                                    <th:block th:with="clinVarData = ${variantEvaluation.pathogenicityData.clinVarData()}"
-                                                              th:switch="${clinVarData.getPrimaryInterpretation().toString()}">
-                                                    <span th:case="'BENIGN'" class="label label-success"
-                                                          th:text="${clinVarData.getPrimaryInterpretation()}">BENIGN</span>
-                                                        <span th:case="'BENIGN_OR_LIKELY_BENIGN'" class="label label-success"
-                                                              th:text="${clinVarData.getPrimaryInterpretation()}">BENIGN_OR_LIKELY_BENIGN</span>
-                                                        <span th:case="'LIKELY_BENIGN'" class="label label-info"
-                                                              th:text="${clinVarData.getPrimaryInterpretation()}">LIKELY_BENIGN</span>
-                                                        <span th:case="'LIKELY_PATHOGENIC'" class="label label-warning"
-                                                              th:text="${clinVarData.getPrimaryInterpretation()}">LIKELY_PATHOGENIC</span>
-                                                        <span th:case="'PATHOGENIC_OR_LIKELY_PATHOGENIC'" class="label label-danger"
-                                                              th:text="${clinVarData.getPrimaryInterpretation()}">PATHOGENIC_OR_LIKELY_PATHOGENIC</span>
-                                                        <span th:case="'PATHOGENIC'" class="label label-danger"
-                                                              th:text="${clinVarData.getPrimaryInterpretation()}">PATHOGENIC</span>
-                                                        <span th:case="*" class="label label-default"
-                                                              th:text="${clinVarData.getPrimaryInterpretation()}">UNCERTAIN_SIGNIFICANCE</span>
-                                                        <a th:href="@{|https://www.ncbi.nlm.nih.gov/clinvar/variation/${clinVarData.variationId}|}"
-                                                           th:text="'(' + ${clinVarData.getReviewStatus()} + ')'">
-                                                            (criteria_provided,_single_submitter)
-                                                        </a>
-                                                        <span th:with="conflictingInterpretationCounts = ${clinVarData.conflictingInterpretationCounts}"
-                                                              th:unless="${#maps.isEmpty(clinVarData.conflictingInterpretationCounts)}"
-                                                              th:text="'(' + ${conflictingInterpretationsFormatter.format(conflictingInterpretationCounts)} + ')'">(P:3, LP:2, VUS:1)
-                                                        </span>
-                                                    </th:block>
+                                                <div class="row">
+                                                    <div class="col-sm-12 col-md-5 mt-2">
+                                                        <!--<b>Frequency Score: 0.95</b>-->
+                                                        <div class="variant-eval-box" th:classappend="${#lists.isEmpty(variantEvaluation.frequencyData.frequencies) ? 'border-top-blank' : 'border-top-info'}">
+                                                            <div class="variant-eval-body">
+                                                                Frequency Data
+                                                                <br>
+                                                                <div class="text-sm" th:each="frequencyData: ${variantEvaluation.frequencyData}">
+                                                                    <div th:if="${#lists.isEmpty(frequencyData.frequencies)}">
+                                                                        None Available
+                                                                    </div>
+                                                                    <div th:each="freq: ${frequencyData.frequencies}"
+                                                                         th:text="${freq.source.source} + ': ' + ${#numbers.formatDecimal(freq.frequency,1,3)} + '%'">
+                                                                        1000Genomes: 0.02%
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-12 col-md-5 mt-2">
+                                                        <div class="variant-eval-box" th:classappend="${#lists.isEmpty(variantEvaluation.pathogenicityData.pathogenicityScores) ? 'border-top-blank' : 'border-top-info'}">
+                                                            <div class="variant-eval-body">
+                                                                Pathogenicity
+                                                                <br>
+                                                                <div th:each="pathogenicityData: ${variantEvaluation.pathogenicityData}">
+                                                                    <div th:if="${#lists.isEmpty(pathogenicityData.pathogenicityScores)}">
+                                                                        None Available
+                                                                    </div>
+                                                                    <div class="text-sm" th:each="pathScore: ${pathogenicityData.pathogenicityScores}"
+                                                                         th:text="${pathScore}">Mutation Taster: 0.999 (P)
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div class="col-sm-6">
-                                                    <b th:text="'Variant score: ' + ${#numbers.formatDecimal(variantEvaluation.getVariantScore(),1,3)}">Variant
-                                                        score: 0.600</b>
-                                                    <span class="label label-info"
-                                                          th:if="${variantEvaluation.contributesToGeneScore()}"
-                                                          th:text="'CONTRIBUTING VARIANT'">CONTRIBUTING VARIANT</span>
-                                                    <span class="label label-danger"
-                                                          th:if="${variantEvaluation.isWhiteListed()}"
-                                                          th:text="'WHITELIST VARIANT'">WHITELIST VARIANT</span>
-                                                    <dl class="list-unstyled">
-                                                        <dt>Transcripts:</dt>
-                                                        <dd th:each="annotation: ${variantEvaluation.transcriptAnnotations}"
-                                                            th:switch="${transcriptDb}">
-                                                            <a th:case="'UCSC'"
-                                                               th:href="@{|https://genome.ucsc.edu/cgi-bin/hgTracks?db=${ucscAssembly}&position=${annotation.accession}|}"
-                                                               th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:uc001lfg.4:c.518A>C:p.E173A</a>
-                                                            <a th:case="'ENSEMBL'"
-                                                               th:href="@{|https://${ensemblAssembly}.ensembl.org/Homo_sapiens/Transcript/Summary?t=${annotation.accession}|}"
-                                                               th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:ENST00000429361.1:c.518A>C:p.E173A</a>
-                                                            <a th:case="'REFSEQ'"
-                                                               th:href="@{|https://www.ncbi.nlm.nih.gov/nuccore/${annotation.accession}|}"
-                                                               th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:NM_000141:c.518A>C:p.E173A</a>
-                                                        </dd>
-                                                    </dl>
-                                                </div>
-                                                <div class="col-sm-3">
-                                                    <!--<b>Pathogenicity Score: 1.00</b>-->
-                                                    <dl class="list-unstyled"
-                                                        th:each="pathogenicityData: ${variantEvaluation.pathogenicityData}">
-                                                        <dt>Pathogenicity Data:</dt>
-                                                        <dd th:each="mostPathogenicScore: ${pathogenicityData.mostPathogenicScore}"
-                                                            th:text="${#strings.prepend(mostPathogenicScore.score, 'Best Score: ')}">1.00
-                                                        </dd>
-                                                        <dd th:if="${#lists.isEmpty(pathogenicityData.pathogenicityScores)}">No
-                                                            pathogenicity data
-                                                        </dd>
-                                                        <dd th:each="pathScore: ${pathogenicityData.pathogenicityScores}"
-                                                            th:text="${pathScore}">Mutation Taster: 0.999 (P)
-                                                        </dd>
-                                                    </dl>
-                                                </div>
-                                                <div class="col-sm-3">
-                                                    <!--<b>Frequency Score: 0.95</b>-->
-                                                    <dl th:each="frequencyData: ${variantEvaluation.frequencyData}">
-                                                        <dt>Frequency Data:</dt>
-                                                        <dd th:if="${#lists.isEmpty(frequencyData.frequencies)}">No frequency data</dd>
-                                                        <dd th:each="freq: ${frequencyData.frequencies}"
-                                                            th:text="${freq.source.source} + ': ' + ${#numbers.formatDecimal(freq.frequency,1,4)} + '%'">
-                                                            1000Genomes: 0.02%
-                                                        </dd>
-                                                    </dl>
+                                                <div class="row">
+                                                    <div class="col-sm-12 col-md-5 mt-2">
+                                                        <div class="variant-eval-box border-top-info">
+                                                            <div class="variant-eval-body">
+                                                                Variant Metadata
+                                                                <br>
+                                                                <div class="badge rounded-pill text-bg-info"  th:if="${variantEvaluation.contributesToGeneScore()}">
+                                                                    CONTRIBUTING VARIANT
+                                                                </div>
+                                                                <div class="badge rounded-pill text-bg-danger" th:if="${variantEvaluation.isWhiteListed()}">WHITELIST VARIANT</div>
+                                                                <div class="variant-eval-btn">
+                                                                    <button class="btn btn-secondary btn-sm transcript-btn" th:text="${'View ' + #arrays.length(variantEvaluation.transcriptAnnotations) + ' Transcripts'} ">
+                                                                        View Transcripts
+                                                                    </button>
+                                                                    <dl class="list-unstyled transcript-list-sm transcript-list mt-2 mr-auto ml-auto">
+                                                                        <dd th:each="annotation: ${variantEvaluation.transcriptAnnotations}"
+                                                                            th:switch="${transcriptDb}">
+                                                                            <a th:case="'UCSC'"
+                                                                               th:href="@{|https://genome.ucsc.edu/cgi-bin/hgTracks?db=${ucscAssembly}&position=${annotation.accession}|}"
+                                                                               th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:uc001lfg.4:c.518A>C:p.E173A</a>
+                                                                            <a th:case="'ENSEMBL'"
+                                                                               th:href="@{|https://${ensemblAssembly}.ensembl.org/Homo_sapiens/Transcript/Summary?t=${annotation.accession}|}"
+                                                                               th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:ENST00000429361.1:c.518A>C:p.E173A</a>
+                                                                            <a th:case="'REFSEQ'"
+                                                                               th:href="@{|https://www.ncbi.nlm.nih.gov/nuccore/${annotation.accession}|}"
+                                                                               th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:NM_000141:c.518A>C:p.E173A</a>
+                                                                        </dd>
+                                                                    </dl>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div> <!-- end variant row -->
                                         </div>
@@ -554,8 +654,8 @@
                             </div>
                           </div>
                           <div class="tab-pane fade" th:id="${'kdiseases-body-' + gene.getGeneIdentifier().getGeneSymbol()}" role="tabpanel" aria-labelledby="kdiseases-tab" tabindex="0">
-                              <div class="col-sm-12" th:each="priorityResult: ${gene.priorityResults}">
-                                  <th:block th:if="${priorityResult.value.getPriorityType().toString() == 'OMIM_PRIORITY'}">
+                              <div class="col-sm-12" th:each="priorityResult: ${gene.priorityResults}" th:if="${priorityResult.value.getPriorityType().toString() == 'OMIM_PRIORITY'}">
+                                  <th:block th:if="${not #lists.isEmpty(priorityResult.value.getAssociatedDiseases())}">
                                       <table class="table table-sm">
                                           <thead>
                                             <tr class="table-light">
@@ -586,6 +686,7 @@
                                           </tbody>
                                       </table>
                                   </th:block>
+                                  <p class="text-center" th:if="${#lists.isEmpty(priorityResult.value.getAssociatedDiseases())}">No Known Diseases</p>
                               </div>
                           </div>
                         </div>
@@ -725,11 +826,9 @@
     </script>
     <!--Filter Input-->
     <script type="text/javascript" th:inline="javascript">
-        debugger;
         document.getElementById('filterInput').addEventListener('input', function() {
             let filter = this.value.toUpperCase();
             let items = document.querySelectorAll('.accordion-item');
-
             items.forEach(item => {
                 const btn = item.querySelector(".accordion-button")
                 let id = btn.id;
@@ -740,6 +839,20 @@
                 }
             });
         });
+    </script>
+    <script>
+        const transcriptBtns = document.querySelectorAll('.transcript-btn');
+        transcriptBtns.forEach((el)=> {
+            el.addEventListener('click', (e) => {
+                if(e.currentTarget.textContent.includes("View")){
+                    e.currentTarget.textContent = 'Hide Transcripts';
+                    e.currentTarget.nextElementSibling.style.display = 'block';
+                } else {
+                    e.currentTarget.textContent = 'View Transcripts';
+                    e.currentTarget.nextElementSibling.style.display = 'none';
+                }
+            })
+        })
     </script>
 
 </body>
