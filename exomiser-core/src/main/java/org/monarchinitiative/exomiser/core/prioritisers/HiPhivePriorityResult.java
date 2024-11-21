@@ -32,8 +32,10 @@ import org.monarchinitiative.exomiser.core.prioritisers.model.GeneDiseaseModel;
 import org.monarchinitiative.exomiser.core.prioritisers.model.GeneModelPhenotypeMatch;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -353,16 +355,49 @@ public class HiPhivePriorityResult extends AbstractPriorityResult {
     }
 
     private void makeBestPhenotypeMatchHtml(StringBuilder stringBuilder, Map<PhenotypeTerm, PhenotypeMatch> bestModelPhenotypeMatches) {
+        Collection<PhenotypeMatch> matches = new ArrayList<>();
+        int unmatched = 0;
         stringBuilder.append("<div class=\"card-body\">");
         stringBuilder.append("<div class=\"matched-set\"><div class=\"match\">Sample</div><div class=\"match\">Reference</div></div>");
         for (PhenotypeTerm queryTerm : queryPhenotypeTerms) {
             if (bestModelPhenotypeMatches.containsKey(queryTerm)) {
                 PhenotypeMatch match = bestModelPhenotypeMatches.get(queryTerm);
-                PhenotypeTerm matchTerm = match.getMatchPhenotype();
-                stringBuilder.append(String.format("<div class=\"matched-set\"><div class=\"match\"><span class=\"match-id text-sm\">%s</span>&nbsp;<span class=\"match-name\">%s</span></div>" +
-                        "<div class=\"match\"><span class=\"match-name\">%s</span>&nbsp;<span class=\"match-id text-sm\">%s</span></div></div>", queryTerm.getId(), queryTerm.getLabel(), matchTerm.getLabel(), matchTerm.getId()));
+                matches.add(match);
+            } else {
+                unmatched++;
             }
         }
+
+        matches = matches.stream()
+                .sorted((a, b) -> {
+                    boolean aMatches = a.getMatchPhenotypeId().equals(a.getQueryPhenotypeId());
+                    boolean bMatches = b.getMatchPhenotypeId().equals(b.getQueryPhenotypeId());
+                    int compare = Boolean.compare(bMatches, aMatches);
+                    if (compare == 0) {
+                        return Double.compare(b.getSimJ(), a.getSimJ());
+                    }
+                    return compare;
+                })
+                .collect(Collectors.toList());
+
+        for (PhenotypeMatch match: matches){
+            if (Objects.equals(match.getMatchPhenotypeId(), match.getQueryPhenotypeId())){
+                stringBuilder.append(String.format("<div class=\"matched-set\"><div class=\"match\"><span class=\"matched-icon me-1\">&#9679;</span><span class=\"match-id text-sm\">%s</span>&nbsp;<span class=\"match-name\">%s</span></div>" +
+                        "<div class=\"match\"><span class=\"match-name\">%s</span>&nbsp;<span class=\"match-id text-sm\">%s</span></div></div>", match.getQueryPhenotypeId(), match.getQueryPhenotype().getLabel(), match.getMatchPhenotype().getLabel(), match.getMatchPhenotype().getId()));
+            } else if (match.getSimJ() >= .75) { // We can look at score here for "better" matches
+                stringBuilder.append(String.format("<div class=\"matched-set\"><div class=\"match\"><span class=\"me-1\">&#9684;</span><span class=\"match-id text-sm\">%s</span>&nbsp;<span class=\"match-name\">%s</span></div>" +
+                        "<div class=\"match\"><span class=\"match-name\">%s</span>&nbsp;<span class=\"match-id text-sm\">%s</span></div></div>", match.getQueryPhenotypeId(), match.getQueryPhenotype().getLabel(), match.getMatchPhenotype().getLabel(), match.getMatchPhenotype().getId()));
+            } else {
+                stringBuilder.append(String.format("<div class=\"matched-set\"><div class=\"match\"><span class=\"match-id text-sm\">%s</span>&nbsp;<span class=\"match-name\">%s</span></div>" +
+                        "<div class=\"match\"><span class=\"match-name\">%s</span>&nbsp;<span class=\"match-id text-sm\">%s</span></div></div>", match.getQueryPhenotypeId(), match.getQueryPhenotype().getLabel(), match.getMatchPhenotype().getLabel(), match.getMatchPhenotype().getId()));
+            }
+        }
+
+
+        // Sort based on exact matches
+        // Store unmatched
+
+
         stringBuilder.append("</div>");
     }
 

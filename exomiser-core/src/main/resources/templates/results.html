@@ -184,7 +184,7 @@
         }
 
         .border-top-danger {
-            border-top: solid red 5px;
+            border-top: solid red 5px !important;
         }
 
         .border-top-default, .border-top-info {
@@ -255,7 +255,9 @@
         .matched-set .match-id {
             color: slategray;
         }
-
+        .matched-icon {
+            font-size: .65rem;
+        }
         .match {
             display: inline-block;
         }
@@ -467,6 +469,18 @@
                                                               th:text="${varId}">12345
                                                     </span>
                                                     </th:block>
+                                                    <div class="text-sm" th:if="${#arrays.length(variantEvaluation.transcriptAnnotations) > 0}" th:with="annotation = ${variantEvaluation.transcriptAnnotations[0]}"
+                                                         th:switch="${transcriptDb}">
+                                                        <a th:case="'UCSC'"
+                                                           th:href="@{|https://genome.ucsc.edu/cgi-bin/hgTracks?db=${ucscAssembly}&position=${annotation.accession}|}"
+                                                           th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:uc001lfg.4:c.518A>C:p.E173A</a>
+                                                        <a th:case="'ENSEMBL'"
+                                                           th:href="@{|https://${ensemblAssembly}.ensembl.org/Homo_sapiens/Transcript/Summary?t=${annotation.accession}|}"
+                                                           th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:ENST00000429361.1:c.518A>C:p.E173A</a>
+                                                        <a th:case="'REFSEQ'"
+                                                           th:href="@{|https://www.ncbi.nlm.nih.gov/nuccore/${annotation.accession}|}"
+                                                           th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:NM_000141:c.518A>C:p.E173A</a>
+                                                    </div>
                                                 </div>
                                                 <div class="row">
                                                     <div class="col-sm-12 col-md-5 mt-2">
@@ -559,7 +573,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="col-sm-12 col-md-5 mt-2">
-                                                        <div class="variant-eval-box" th:classappend="${#lists.isEmpty(variantEvaluation.pathogenicityData.pathogenicityScores) ? 'border-top-blank' : 'border-top-info'}">
+                                                        <div class="variant-eval-box" th:classappend="${variantEvaluation.isWhiteListed() ? 'border-top-danger' : ''} + ' ' + ${#lists.isEmpty(variantEvaluation.pathogenicityData.pathogenicityScores) ? 'border-top-blank' : 'border-top-info'}">
                                                             <div class="variant-eval-body">
                                                                 Pathogenicity
                                                                 <br>
@@ -567,42 +581,10 @@
                                                                     <div th:if="${#lists.isEmpty(pathogenicityData.pathogenicityScores)}">
                                                                         None Available
                                                                     </div>
+                                                                    <div class="badge rounded-pill text-bg-danger" th:if="${variantEvaluation.isWhiteListed()}">WHITELIST VARIANT</div>
                                                                     <div class="text-sm" th:each="pathScore: ${pathogenicityData.pathogenicityScores}"
                                                                          th:text="${pathScore}">Mutation Taster: 0.999 (P)
                                                                     </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-sm-12 col-md-5 mt-2">
-                                                        <div class="variant-eval-box border-top-info">
-                                                            <div class="variant-eval-body">
-                                                                Variant Metadata
-                                                                <br>
-                                                                <div class="badge rounded-pill text-bg-info"  th:if="${variantEvaluation.contributesToGeneScore()}">
-                                                                    CONTRIBUTING VARIANT
-                                                                </div>
-                                                                <div class="badge rounded-pill text-bg-danger" th:if="${variantEvaluation.isWhiteListed()}">WHITELIST VARIANT</div>
-                                                                <div class="variant-eval-btn">
-                                                                    <button class="btn btn-secondary btn-sm transcript-btn" th:text="${'View ' + #arrays.length(variantEvaluation.transcriptAnnotations) + ' Transcripts'} ">
-                                                                        View Transcripts
-                                                                    </button>
-                                                                    <dl class="list-unstyled transcript-list-sm transcript-list mt-2 mr-auto ml-auto">
-                                                                        <dd th:each="annotation: ${variantEvaluation.transcriptAnnotations}"
-                                                                            th:switch="${transcriptDb}">
-                                                                            <a th:case="'UCSC'"
-                                                                               th:href="@{|https://genome.ucsc.edu/cgi-bin/hgTracks?db=${ucscAssembly}&position=${annotation.accession}|}"
-                                                                               th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:uc001lfg.4:c.518A>C:p.E173A</a>
-                                                                            <a th:case="'ENSEMBL'"
-                                                                               th:href="@{|https://${ensemblAssembly}.ensembl.org/Homo_sapiens/Transcript/Summary?t=${annotation.accession}|}"
-                                                                               th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:ENST00000429361.1:c.518A>C:p.E173A</a>
-                                                                            <a th:case="'REFSEQ'"
-                                                                               th:href="@{|https://www.ncbi.nlm.nih.gov/nuccore/${annotation.accession}|}"
-                                                                               th:text="${gene.getGeneSymbol() + ':' + annotation.getAccession() + ':' + annotation.getHgvsCdna() + ':' + annotation.getHgvsProtein()}">FGFR2:NM_000141:c.518A>C:p.E173A</a>
-                                                                        </dd>
-                                                                    </dl>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -928,23 +910,6 @@
                 }
             });
         });
-    </script>
-    <script>
-        const transcriptBtns = document.querySelectorAll('.transcript-btn');
-        transcriptBtns.forEach((el)=> {
-            el.addEventListener('click', (e) => {
-                if(e.currentTarget.textContent.includes("View")){
-                    e.currentTarget.textContent = 'Hide Transcripts';
-                    e.currentTarget.nextElementSibling.style.display = 'block';
-                } else {
-                    e.currentTarget.textContent = 'View Transcripts';
-                    e.currentTarget.nextElementSibling.style.display = 'none';
-                }
-            })
-        })
-    </script>
-    <script>
-
     </script>
 </body>
 </html>
