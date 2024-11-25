@@ -384,7 +384,7 @@ public class HiPhivePriorityResult extends AbstractPriorityResult {
             if (Objects.equals(match.getMatchPhenotypeId(), match.getQueryPhenotypeId())){
                 stringBuilder.append(String.format("<div class=\"matched-set\"><div class=\"match\"><span class=\"matched-icon me-1\">&#9679;</span><span class=\"match-id text-sm\">%s</span>&nbsp;<span class=\"match-name\">%s</span></div>" +
                         "<div class=\"match\"><span class=\"match-name\">%s</span>&nbsp;<span class=\"match-id text-sm\">%s</span></div></div>", match.getQueryPhenotypeId(), match.getQueryPhenotype().getLabel(), match.getMatchPhenotype().getLabel(), match.getMatchPhenotype().getId()));
-            } else if (match.getSimJ() >= .75) { // We can look at score here for "better" matches
+            } else if (match.getSimJ() >= .75) { // We can look at simJ here for "better" matches
                 stringBuilder.append(String.format("<div class=\"matched-set\"><div class=\"match\"><span class=\"me-1\">&#9684;</span><span class=\"match-id text-sm\">%s</span>&nbsp;<span class=\"match-name\">%s</span></div>" +
                         "<div class=\"match\"><span class=\"match-name\">%s</span>&nbsp;<span class=\"match-id text-sm\">%s</span></div></div>", match.getQueryPhenotypeId(), match.getQueryPhenotype().getLabel(), match.getMatchPhenotype().getLabel(), match.getMatchPhenotype().getId()));
             } else {
@@ -393,12 +393,10 @@ public class HiPhivePriorityResult extends AbstractPriorityResult {
             }
         }
 
-
-        // Sort based on exact matches
-        // Store unmatched
-
-
         stringBuilder.append("</div>");
+        if (unmatched > 0) {
+            stringBuilder.append(String.format("<div class=\"card-footer text-muted text-end\">%s of %s phenotypes unmatched.</div>", unmatched, queryPhenotypeTerms.size()));
+        }
     }
 
     private String makeDiseaseLink(String diseaseId, String diseaseTerm) {
