@@ -44,6 +44,12 @@
         .tab-pane:not(.active) {
             display: none;
         }
+
+        #distribution {
+            width: 75vh;
+            margin: 1rem auto 0 auto;
+        }
+
         pre {
             display: block;
             padding: 9.5px;
@@ -457,8 +463,6 @@
                                                     <div class="label label-danger d-inline"
                                                           th:text="${variantEvaluation.variantEffect}">MISSENSE</div>
                                                     <div class="d-inline" th:text=" ${variantEvaluation.variantType}"> SNV</div>
-                                                    <div class="variant d-inline fw-bold" th:text=" |${variantEvaluation.toGnomad} [${variantEvaluation.genotypeString}]|">chr10:g.123256215T>G [0/1]</div>
-                                                    <div class="d-inline" th:if="${variantEvaluation.isSymbolic()}"  th:text=" |${variantEvaluation.changeLengthString}|"> 10 Mb</div>
                                                     <th:block th:each="varId: ${variantEvaluation.frequencyData.rsId}"
                                                               th:if="!${#strings.isEmpty(varId)}"
                                                               th:switch="${#strings.substring(varId, 0, 2)}">
@@ -486,6 +490,8 @@
                                                         <button type="button" class="btn btn-outline-primary btn-copy-evaluation disable" data-bs-original-title="Copy to clipboard">Export Evaluation</button>
                                                         <button type="button" class="btn btn-outline-secondary btn-copy-igv" data-bs-original-title="Copy IGV to clipboard">Copy IGV</button>
                                                     </div>
+                                                    <div class="variant fw-bold" th:text=" |${variantEvaluation.toGnomad} [${variantEvaluation.genotypeString}]|">chr10:g.123256215T>G [0/1]</div>
+                                                    <div class="d-inline" th:if="${variantEvaluation.isSymbolic()}"  th:text=" |${variantEvaluation.changeLengthString}|"> 10 Mb</div>
                                                     <div class="col-sm-12">
                                                         <div class="text-sm" th:if="${#arrays.length(variantEvaluation.transcriptAnnotations) > 0}" th:with="annotation = ${variantEvaluation.transcriptAnnotations[0]}"
                                                              th:switch="${transcriptDb}">
@@ -601,7 +607,7 @@
                                                                     <div th:if="${#lists.isEmpty(frequencyData.frequencies)}">
                                                                         None Available
                                                                     </div>
-                                                                    <div class="d-flex frequency">
+                                                                    <div class="d-flex frequency" th:unless="${#lists.isEmpty(frequencyData.frequencies)}">
                                                                         <div class="col">
                                                                             <p class="fw-bold m-0 text-center fst-italic">gnomAD</p>
                                                                             <p class="m-0 d-flex" th:each="freq, stat: ${frequencyData.frequencies}" th:if="${#strings.startsWith(freq.source.source, 'gnomAD')}">
