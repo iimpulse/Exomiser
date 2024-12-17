@@ -358,7 +358,7 @@ public class HiPhivePriorityResult extends AbstractPriorityResult {
         Collection<PhenotypeMatch> matches = new ArrayList<>();
         int unmatched = 0;
         stringBuilder.append("<div class=\"card-body\">");
-        stringBuilder.append("<div class=\"matched-set\"><div class=\"match\">Sample</div><div class=\"match\">Reference</div></div>");
+        stringBuilder.append("<div class=\"d-flex px-2\"><div class=\"flex-grow-1 fw-bold\">Sample</div><div class=\"fw-bold\">Reference</div></div>");
         for (PhenotypeTerm queryTerm : queryPhenotypeTerms) {
             if (bestModelPhenotypeMatches.containsKey(queryTerm)) {
                 PhenotypeMatch match = bestModelPhenotypeMatches.get(queryTerm);
@@ -381,16 +381,10 @@ public class HiPhivePriorityResult extends AbstractPriorityResult {
                 .collect(Collectors.toList());
 
         for (PhenotypeMatch match: matches){
-            if (Objects.equals(match.getMatchPhenotypeId(), match.getQueryPhenotypeId())){
-                stringBuilder.append(String.format("<div class=\"matched-set\"><div class=\"match\"><span class=\"matched-icon me-1\">&#9679;</span><span class=\"match-id text-sm\">%s</span>&nbsp;<span class=\"match-name\">%s</span></div>" +
-                        "<div class=\"match\"><span class=\"match-name\">%s</span>&nbsp;<span class=\"match-id text-sm\">%s</span></div></div>", match.getQueryPhenotypeId(), match.getQueryPhenotype().getLabel(), match.getMatchPhenotype().getLabel(), match.getMatchPhenotype().getId()));
-            } else if (match.getSimJ() >= .75) { // We can look at simJ here for "better" matches
-                stringBuilder.append(String.format("<div class=\"matched-set\"><div class=\"match\"><span class=\"me-1\">&#9684;</span><span class=\"match-id text-sm\">%s</span>&nbsp;<span class=\"match-name\">%s</span></div>" +
-                        "<div class=\"match\"><span class=\"match-name\">%s</span>&nbsp;<span class=\"match-id text-sm\">%s</span></div></div>", match.getQueryPhenotypeId(), match.getQueryPhenotype().getLabel(), match.getMatchPhenotype().getLabel(), match.getMatchPhenotype().getId()));
-            } else {
-                stringBuilder.append(String.format("<div class=\"matched-set\"><div class=\"match\"><span class=\"match-id text-sm\">%s</span>&nbsp;<span class=\"match-name\">%s</span></div>" +
-                        "<div class=\"match\"><span class=\"match-name\">%s</span>&nbsp;<span class=\"match-id text-sm\">%s</span></div></div>", match.getQueryPhenotypeId(), match.getQueryPhenotype().getLabel(), match.getMatchPhenotype().getLabel(), match.getMatchPhenotype().getId()));
-            }
+            stringBuilder.append(String.format(
+                    "<div class=\"matched-set\"><div class=\"match\"><div class=\"match-left text-sm\"><div class=\"match-id\">%s</div><div class=\"match-name px-2\">%s</div></div>" +
+                    "<div class=\"align-self-center\"><span class=\"badge bg-success\">%.3f</span></div>" +
+                    "<div class=\"match-right text-sm\"><div class=\"match-id\">%s</div><div class=\"match-name px-2\">%s</div></div></div></div>", match.getQueryPhenotypeId(), match.getQueryPhenotype().getLabel(), match.getSimJ(), match.getMatchPhenotype().getId(), match.getMatchPhenotype().getLabel()));
         }
 
         stringBuilder.append("</div>");

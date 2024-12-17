@@ -267,18 +267,23 @@
         }
 
         .matched-set {
-            display: inline-block;
+            display: block;
             width: 100%;
         }
 
         .matched-set .match-id {
             color: slategray;
+            margin-bottom: -.25rem;
         }
-        .matched-icon {
-            font-size: .65rem;
-        }
+
         .match {
-            display: inline-block;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .match-left, .match-right {
+            flex: 1 0 0;
+            text-align: center;
         }
 
         .matched-set .match:nth-child(2) {
@@ -289,8 +294,8 @@
             font-weight: bold;
         }
 
-        .matched-set:nth-child(odd) {
-            background-color: #e8e8e845;
+        .matched-set:nth-child(even) {
+            background-color: #e8e8e8db;
         }
 
         .ai-c {
@@ -302,6 +307,10 @@
 
         .frequency-source {
             width: 125px;
+        }
+
+        .pheno-match-card .card-body {
+            padding: .5rem 0;
         }
     </style>
 </head>
