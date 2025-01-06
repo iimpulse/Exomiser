@@ -73,6 +73,10 @@ public class FilterReport {
         return ((originalSize - (double) passed) / originalSize) * 100;
     }
 
+    public double getPercentageFilteredFromReports(double originalSize) {
+        return (failed / originalSize) * 100;
+    }
+
     public double getPercentageFilteredFromReport(double originalSize) {
         return (failed / originalSize) * 100;
     }

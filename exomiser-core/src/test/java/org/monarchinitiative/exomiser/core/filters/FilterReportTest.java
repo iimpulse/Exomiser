@@ -147,7 +147,8 @@ public class FilterReportTest {
 
     @Test
     public void testPercentageFailed(){
-        assertThat(instance.getPercentageFilteredFromBeginning(345), equalTo(((345 - 12) / 345) * 100));
+        double expected = ((double)(345 - 12) / 345) * 100;
+        assertThat(instance.getPercentageFilteredFromBeginning(345), equalTo(expected));
     }
 
 }
